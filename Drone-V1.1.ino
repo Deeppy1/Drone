@@ -4,16 +4,23 @@
 Bluepad32 bp32;
 
 GamepadPtr myGamepad;
-bool arm = False
+bool arm = 0; // Arming flag
 
-//Motor Pins
-const int MotorPin1 = 2;
-const int MotorPin2 = 3;
-const int MotorPin3 = 4;
-const int MotorPin4 = 5;
+// Motor Pins (Use PWM-capable pins on the ESP32)
+const int MotorPin1 = 16;
+const int MotorPin2 = 17;
+const int MotorPin3 = 18;
+const int MotorPin4 = 19;
 
-int VerticalSpeed 
-int LeftSticky
+int MotorSpeed = 0;
+int VerticalSpeed = 0;
+int LeftSticky = 0;
+int ForwardSpeed = 0;
+int RightSticky = 0;
+
+// Timer for non-blocking delays
+unsigned long previousMillis = 0;
+const unsigned long interval = 500; // 500ms interval for status messages
 
 // Callback when a gamepad is connected
 void onGamepadConnected(GamepadPtr gp) {
@@ -26,82 +33,110 @@ void onGamepadDisconnected(GamepadPtr gp) {
   Serial.println("Gamepad disconnected!");
   myGamepad = nullptr;
 }
-void SetVerticalSpeed(int MotorSpeed){
-    analogWrite(MotorPin1, MotorSpeed);
-    analogWrite(MotorPin2, MotorSpeed);
-    analogWrite(MotorPin3, MotorSpeed);
-    analogWrite(MotorPin4, MotorSpeed);
 
+// Set all motor speeds to the same value (vertical control)
+void SetVerticalSpeed(int MotorSpeed) {
+  ledcWrite(0, MotorSpeed);
+  ledcWrite(1, MotorSpeed);
+  ledcWrite(2, MotorSpeed);
+  ledcWrite(3, MotorSpeed);
 }
-void SetForwardSpeed(int FMotorSpeed){
-    if (ForwardSpeed < 0) {
-    ForwardSpeed = -ForwardSpeed;
-  } else {
-    ForwardSpeed = ForwardSpeed;
-  }
-    FMotorSpeed = (ForwardSpeed / 3)
-    analogWrite(MotorPin1, MotorSpeed - FMotorSpeed);
-    analogWrite(MotorPin2, MotorSpeed - FMotorSpeed);
-    analogWrite(MotorPin3, MotorSpeed + FMotorSpeed);
-    analogWrite(MotorPin4, MotorSpeed + FMotorSpeed);
 
+// Set forward/backward speed (differential control)
+void SetForwardSpeed(int FMotorSpeed) {
+  FMotorSpeed = abs(FMotorSpeed) / 3; // Scale forward speed
+  ledcWrite(0, MotorSpeed - FMotorSpeed);
+  ledcWrite(1, MotorSpeed - FMotorSpeed);
+  ledcWrite(2, MotorSpeed + FMotorSpeed);
+  ledcWrite(3, MotorSpeed + FMotorSpeed);
 }
+
+// Emergency stop function (sets all motors to zero)
+void Estop() {
+  ledcWrite(0, 0);
+  ledcWrite(1, 0);
+  ledcWrite(2, 0);
+  ledcWrite(3, 0);
+}
+
 void setup() {
   Serial.begin(115200);
 
   // Initialize Bluepad32
   bp32.setup(&onGamepadConnected, &onGamepadDisconnected);
 
-  // Set up the built-in LED
-  pinMode(MotorPin1, OUTPUT);
+  // Setup PWM for motor pins
+  ledcAttachPin(MotorPin1, 0);
+  ledcAttachPin(MotorPin2, 1);
+  ledcAttachPin(MotorPin3, 2);
+  ledcAttachPin(MotorPin4, 3);
+  ledcSetup(0, 5000, 8); // Channel 0, 5kHz, 8-bit resolution
+  ledcSetup(1, 5000, 8);
+  ledcSetup(2, 5000, 8);
+  ledcSetup(3, 5000, 8);
 }
 
 void loop() {
-
   // Update the Bluepad32 instance
   bp32.update();
 
-  // If a gamepad is connected
+  // Non-blocking delay for status messages
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+
+    if (!myGamepad || !myGamepad->isConnected()) {
+      Estop();
+      Serial.println("No controller connected");
+    }
+  }
+
+  // Process gamepad inputs if connected
   if (myGamepad && myGamepad->isConnected()) {
-
+    // Toggle arming state with the "A" button
     if (myGamepad->a()) {
-      Serial.println("Button A pressed!");
-      arm = True; // Turn LED on
-    } 
-
-    // Get the left stick Y-axis value
-    LeftSticky = myGamepad->axisY(); // Range: -512 to 512
-
-    // Map the stick value to LED VerticalSpeed (0-255)
-    VerticalSpeed = map(LeftSticky, -512, 0, 0, 255);
-
-    // Clamp the VerticalSpeed to valid range (0-255)
-    VerticalSpeed = constrain(VerticalSpeed, 0, 255);
-    if (LeftSticky > -20) {
-      SetVerticalSpeed(0);
-
+      arm = !arm; // Toggle arm state
+      Serial.println(arm ? "Drone armed" : "Drone disarmed");
+      delay(300); // Debounce delay
     }
 
-    // Set the Motor Vertical Speed
-    RightSticky = myGamepad->axisRY()
-    ForwardSpeed = map(RightSticky, -512, 0 , 255)
+    // Read gamepad sticks
+    LeftSticky = myGamepad->axisY();    // Vertical control
+    RightSticky = myGamepad->axisRY(); // Forward control
 
+    // Map and constrain stick values
+    VerticalSpeed = map(LeftSticky, -512, 0, 0, 255);
+    VerticalSpeed = constrain(VerticalSpeed, 0, 255);
 
-    if(arm == True){
+    ForwardSpeed = map(RightSticky, -512, 512, -255, 255); // Allow negative for reverse
+    ForwardSpeed = constrain(ForwardSpeed, -255, 255);
+
+    if (arm) {
+      // Set motor speeds based on stick inputs
+      if (abs(LeftSticky) > -30) { // Dead zone for stability
+        Estop();
+      } else {
+        SetVerticalSpeed(VerticalSpeed);
+        SetForwardSpeed(ForwardSpeed);
+      }
+
+      // Debug output for motor speeds
       Serial.print("Left Stick Y: ");
       Serial.print(LeftSticky);
       Serial.print(" -> Motor Vertical Speed: ");
       Serial.println(VerticalSpeed);
-      SetVerticalSpeed(LeftSticky);
-      Serial.print("Right Stick Y: ");
-      Serial.print(RightSticky);
-      Serial.print(" -> Motor Vertical Speed: ");
-      Serial.println(ForwardSpeed);
-      SetVerticalSpeed(LeftSticky);
-      SetForwardSpeed(RightSticky)
-    }else(){
-      Serial.println("Drone unarmed")
-      delay(500)
+
+      //Serial.print("Right Stick Y: ");
+      //Serial.print(RightSticky);
+      //Serial.print(" -> Motor Forward Speed: ");
+      //Serial.println(ForwardSpeed);
+    } else {
+      // Drone unarmed
+      Estop();
+      Serial.println("Drone unarmed. Waiting for arm command.");
     }
+  } else {
+    // No controller connected
+    Estop();
   }
 }
