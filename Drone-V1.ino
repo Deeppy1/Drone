@@ -6,7 +6,13 @@ Bluepad32 bp32;
 GamepadPtr myGamepad;
 
 // Pin for the built-in LED
-const int LED_PIN = 2;
+const int MotorPin1 = 2;
+const int MotorPin2 = 3;
+const int MotorPin3 = 4;
+const int MotorPin4 = 5;
+
+int VerticalSpeed 
+int LeftSticky
 
 // Callback when a gamepad is connected
 void onGamepadConnected(GamepadPtr gp) {
@@ -27,7 +33,7 @@ void setup() {
   bp32.setup(&onGamepadConnected, &onGamepadDisconnected);
 
   // Set up the built-in LED
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(MotorPin1, OUTPUT);
 }
 
 void loop() {
@@ -37,24 +43,24 @@ void loop() {
   // If a gamepad is connected
   if (myGamepad && myGamepad->isConnected()) {
     // Get the left stick Y-axis value
-    int leftStickY = myGamepad->axisY(); // Range: -512 to 512
+    LeftSticky = myGamepad->axisY(); // Range: -512 to 512
 
-    // Map the stick value to LED brightness (0-255)
-    int brightness = map(leftStickY, -512, 0, 0, 255);
+    // Map the stick value to LED VerticalSpeed (0-255)
+    VerticalSpeed = map(LeftSticky, -512, 0, 0, 255);
 
-    // Clamp the brightness to valid range (0-255)
-    brightness = constrain(brightness, 0, 255);
-    if (leftStickY > -20) {
-      analogWrite(LED_PIN, 0);
+    // Clamp the VerticalSpeed to valid range (0-255)
+    VerticalSpeed = constrain(VerticalSpeed, 0, 255);
+    if (LeftSticky > -20) {
+      analogWrite(MotorPin1, 0);
     }
     
-    // Set the LED brightness
-    analogWrite(LED_PIN, brightness);
+    // Set the LED VerticalSpeed
+    analogWrite(MotorPin1, VerticalSpeed);
 
     Serial.print("Left Stick Y: ");
-    Serial.print(leftStickY);
-    Serial.print(" -> LED Brightness: ");
-    Serial.println(brightness);
+    Serial.print(LeftSticky);
+    Serial.print(" -> Motor VerticalSpeed: ");
+    Serial.println(VerticalSpeed);
     
   }
 }
