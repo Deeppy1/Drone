@@ -53,10 +53,10 @@ void SetForwardSpeed(int FMotorSpeed) {
 
 // Emergency stop function (sets all motors to zero)
 void Estop() {
-  ledcWrite(0, 0);
-  ledcWrite(1, 0);
-  ledcWrite(2, 0);
-  ledcWrite(3, 0);
+  digitalWrite(MotorPin1, 0);
+  digitalWrite(MotorPin2, 0);
+  digitalWrite(MotorPin3, 0);
+  digitalWrite(MotorPin4, 0);
 }
 
 void setup() {
@@ -65,15 +65,18 @@ void setup() {
   // Initialize Bluepad32
   bp32.setup(&onGamepadConnected, &onGamepadDisconnected);
 
-  // Setup PWM for motor pins
-  ledcAttachPin(MotorPin1, 0);
-  ledcAttachPin(MotorPin2, 1);
-  ledcAttachPin(MotorPin3, 2);
-  ledcAttachPin(MotorPin4, 3);
+  // Setup PWM for motor pins using native LEDC functions
   ledcSetup(0, 5000, 8); // Channel 0, 5kHz, 8-bit resolution
-  ledcSetup(1, 5000, 8);
-  ledcSetup(2, 5000, 8);
-  ledcSetup(3, 5000, 8);
+  ledcAttachPin(MotorPin1, 0);
+
+  ledcSetup(1, 5000, 8); // Channel 1, 5kHz, 8-bit resolution
+  ledcAttachPin(MotorPin2, 1);
+
+  ledcSetup(2, 5000, 8); // Channel 2, 5kHz, 8-bit resolution
+  ledcAttachPin(MotorPin3, 2);
+
+  ledcSetup(3, 5000, 8); // Channel 3, 5kHz, 8-bit resolution
+  ledcAttachPin(MotorPin4, 3);
 }
 
 void loop() {
@@ -105,7 +108,7 @@ void loop() {
     RightSticky = myGamepad->axisRY(); // Forward control
 
     // Map and constrain stick values
-    VerticalSpeed = map(LeftSticky, -512, 0, 0, 255);
+    VerticalSpeed = map(LeftSticky, -512, -30, 255, 0);
     VerticalSpeed = constrain(VerticalSpeed, 0, 255);
 
     ForwardSpeed = map(RightSticky, -512, 512, -255, 255); // Allow negative for reverse
@@ -114,10 +117,14 @@ void loop() {
     if (arm) {
       // Set motor speeds based on stick inputs
       if (abs(LeftSticky) > -30) { // Dead zone for stability
-        Estop();
+        ledcWrite(0, MotorSpeed);
+        ledcWrite(1, MotorSpeed);
+        ledcWrite(2, MotorSpeed);
+        ledcWrite(3, MotorSpeed);
+        
       } else {
-        SetVerticalSpeed(VerticalSpeed);
-        SetForwardSpeed(ForwardSpeed);
+        //SetVerticalSpeed(VerticalSpeed);
+        //SetForwardSpeed(ForwardSpeed);
       }
 
       // Debug output for motor speeds
