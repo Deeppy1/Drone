@@ -5,7 +5,7 @@ Bluepad32 bp32;
 
 GamepadPtr myGamepad;
 
-// Pin for the built-in LED
+//Motor Pins
 const int MotorPin1 = 2;
 const int MotorPin2 = 3;
 const int MotorPin3 = 4;
@@ -51,16 +51,23 @@ void loop() {
     // Clamp the VerticalSpeed to valid range (0-255)
     VerticalSpeed = constrain(VerticalSpeed, 0, 255);
     if (LeftSticky > -20) {
-      analogWrite(MotorPin1, 0);
+      SetVerticalSpeed(0);
+
     }
+    void SetVerticalSpeed(int MotorSpeed){
+      analogWrite(MotorPin1, MotorSpeed);
+      analogWrite(MotorPin2, MotorSpeed);
+      analogWrite(MotorPin3, MotorSpeed);
+      analogWrite(MotorPin4, MotorSpeed);
+
+    }
+    // Set the Motor Vertical Speed
     
-    // Set the LED VerticalSpeed
-    analogWrite(MotorPin1, VerticalSpeed);
 
     Serial.print("Left Stick Y: ");
     Serial.print(LeftSticky);
-    Serial.print(" -> Motor VerticalSpeed: ");
+    Serial.print(" -> Motor Vertical Speed: ");
     Serial.println(VerticalSpeed);
-    
+    SetVerticalSpeed(LeftSticky);
   }
 }
