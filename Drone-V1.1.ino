@@ -93,6 +93,12 @@ void loop() {
       Serial.print(" -> Motor Vertical Speed: ");
       Serial.println(VerticalSpeed);
       SetVerticalSpeed(LeftSticky);
+      Serial.print("Right Stick Y: ");
+      Serial.print(RightSticky);
+      Serial.print(" -> Motor Vertical Speed: ");
+      Serial.println(ForwardSpeed);
+      SetVerticalSpeed(LeftSticky);
+      SetForwardSpeed(RightSticky)
     }else(){
       Serial.println("Drone unarmed")
     }
