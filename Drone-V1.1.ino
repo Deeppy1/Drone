@@ -101,6 +101,7 @@ void loop() {
       SetForwardSpeed(RightSticky)
     }else(){
       Serial.println("Drone unarmed")
+      delay(500)
     }
   }
 }
