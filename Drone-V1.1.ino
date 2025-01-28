@@ -64,7 +64,10 @@ void setup() {
 
   // Initialize Bluepad32
   bp32.setup(&onGamepadConnected, &onGamepadDisconnected);
-
+  PinMode(MotorPin1, OUTPUT);
+  PinMode(MotorPin2, OUTPUT);
+  PinMode(MotorPin3, OUTPUT);
+  PinMode(MotorPin4, OUTPUT);
   // Setup PWM for motor pins using native LEDC functions
   ledcSetup(0, 5000, 8); // Channel 0, 5kHz, 8-bit resolution
   ledcAttachPin(MotorPin1, 0);

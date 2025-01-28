@@ -85,9 +85,12 @@ void loop() {
       Serial.print(" -> Motor Vertical Speed: ");
       Serial.println(VerticalSpeed);
       SetVerticalSpeed(LeftSticky);
+
+=======
     } 
     //else() {
       //Serial.println("Drone unarmed");
     //}
   
+>>>>>>> 37ab201f70ce4e47b737235d515b752c54b45dfe
 }
