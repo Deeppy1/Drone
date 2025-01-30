@@ -24,5 +24,5 @@ void loop() {
     }
     Serial.println(leftSticky);
     motorspeed = map(leftSticky, 0, -512, 0, 255);
-    ledcWrite(0, 0);
+    ledcWrite(0, motorspeed);
 }
